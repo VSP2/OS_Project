@@ -1,0 +1,98 @@
+#include<pthread.h>
+#include<stdio.h>
+#include<sys/wait.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<unistd.h>
+#include<fcntl.h>
+#include<stdlib.h>
+
+void *reader_block();              
+void *writer_block();              
+pthread_mutex_t read1,write1;     
+int readcount=0;                  
+int value=0;			   
+int main()
+{
+	pthread_mutex_init(&read1,NULL);
+	pthread_mutex_init(&write1,NULL);
+	pthread_t thread1,thread2;
+	int i,a,flag=1;
+	while(flag)
+	{	
+		printf("SELECT the option from following Conditions\n");
+		printf("\t1.For reader and the writer\n");
+		printf("\t2.For writer and the reader\n");
+		printf("\t3.For writer and again writer\n");
+		printf("\t4.For reader and the again reader\n");
+		scanf("%d",&a);
+		if(a==1)
+		{	
+			pthread_create(&thread1,NULL,reader_block,NULL);
+			pthread_create(&thread2,NULL,writer_block,NULL);
+			pthread_join(thread1,NULL);
+			pthread_join(thread2,NULL);
+		}
+		if(a==2)
+		{
+			pthread_create(&thread1,NULL,writer_block,NULL);
+			pthread_create(&thread2,NULL,reader_block,NULL);
+			pthread_join(thread1,NULL);
+			pthread_join(thread2,NULL);
+		}
+		if(a==3)
+		{
+			pthread_create(&thread1,NULL,writer_block,NULL);
+			pthread_create(&thread2,NULL,writer_block,NULL);
+			pthread_join(thread1,NULL);
+			pthread_join(thread2,NULL);
+	         }
+		if(a==4)
+		{
+			pthread_create(&thread1,NULL,reader_block,NULL);
+			pthread_create(&thread2,NULL,reader_block,NULL);
+			pthread_join(thread1,NULL);
+			pthread_join(thread2,NULL);
+	       }
+	printf("\n Select Option : ");
+	printf("\n\n\t1.To continue\n");
+	printf("\n\n\t0.To EXIT");
+	printf("\n");
+	scanf("%d",&flag);
+	}
+         printf("\n\n\t\tEXIT SUCCESS\n\n");
+}
+void *reader_block()
+{
+	int f;
+	printf("Reader attempts to read\n");
+	pthread_mutex_lock(&read1);
+	printf("reader enters into critical section\n");
+	readcount++;
+	if(readcount==1)
+	{
+		pthread_mutex_lock(&write1);
+	}
+	pthread_mutex_unlock(&read1);
+	printf("value read by the reader is %d\n",value);
+	sleep(1);
+	readcount--;
+	if(readcount==0)
+	{
+		pthread_mutex_unlock(&write1);
+	}
+	pthread_mutex_unlock(&read1);
+	printf("reader EXIT from critical section\n");
+}
+void *writer_block()
+{
+	int f;
+	printf("writer attempts\n");
+	pthread_mutex_lock(&write1);
+	printf("writer enters into critical section\n");
+	value++;
+	printf("Value written by the writer is %d\n",value);
+	sleep(1);
+	pthread_mutex_unlock(&write1);
+	printf("writer EXIT from critical section\n");
+}
